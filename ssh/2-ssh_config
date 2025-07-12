@@ -1,0 +1,5 @@
+Host web-ser
+    HostName 6567-web-01
+    User ubuntu
+    IdentifyFile ~/.ssh/school
+    PasswordAuthentication no
