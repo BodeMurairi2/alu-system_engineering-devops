@@ -1,3 +1,4 @@
+# Puppet manifest to configure SSH client for key-based authentication and disable password auth
 file { '~/.ssh/config':
   ensure  => file,
   owner   => 'bodemurairi',
