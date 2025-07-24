@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 # automate config mismatch error in nginx
 
 rm /etc/nginx/sites-enabled/default
