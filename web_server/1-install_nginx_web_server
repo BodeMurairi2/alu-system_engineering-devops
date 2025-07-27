@@ -1,19 +1,12 @@
 #!/usr/bin/env bash
-# This script installs the Nginx and configure it to serve a html file
+# Installs nginx and configures it to serve a custom page with "Holberton School"
 
-# install nginx
-apt-get update
+# Update package list and install nginx silently
+apt-get update -y
 apt-get install nginx -y
 
-# Check if installation was successful
-nginx -v
-if [ $? -ne 0 ]; then
-    echo "Nginx installation failed."
-    exit 1
-fi
-
-# Create a simple HTML file
+# Create custom HTML content
 echo "Holberton School for the win!" > /var/www/html/index.nginx-debian.html
 
-# Restart Nginx without using systemctl
+# Restart nginx without using systemctl
 service nginx restart
