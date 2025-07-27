@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# This script installs nginx and configures a 301 redirect from /redirect_me
+# Configures a new Ubuntu machine to serve a 301 redirect on /redirect_me
 
-# Update package list and install nginx silently
+# Update package list and install nginx
 apt-get update -y
 apt-get install nginx -y
 
-# Create custom HTML content
-echo "Holberton School for the win!" > /var/www/html/index.nginx-debian.html
+# Create index file
+echo "Holberton School for the win!" > /var/www/html/index.html
 
-# Add a redirect for /redirect_me to https://www.youtube.com (or any other page)
-# Modify the default nginx config to insert a redirect inside the server block
-sed -i '/server_name _;/a \\\n\tlocation /redirect_me {\n\t\treturn 301 https://www.youtube.com;\n\t}' /etc/nginx/sites-available/default
+# Insert 301 redirect in Nginx config
+# The block is inserted directly under the first server block
+sed -i '/^\s*server {/a \\tlocation /redirect_me {\n\t\treturn 301 https://www.youtube.com;\n\t}' /etc/nginx/sites-available/default
 
 # Restart nginx without using systemctl
 service nginx restart
