@@ -1,19 +1,31 @@
 #!/usr/bin/env bash
 
+# Update package lists and install UFW if not installed
 sudo apt-get update -y
 sudo apt-get install -y ufw
 
-# Reset UFW to default to clear old rules
+# Reset UFW to clear any previous rules
 sudo ufw --force reset
 
-# Set default policies
+# Set default policies: deny incoming silently (DROP), allow all outgoing
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
 
-# Allow required ports
+# Allow required TCP ports
 sudo ufw allow 22/tcp
 sudo ufw allow 80/tcp
 sudo ufw allow 443/tcp
 
-# Enable UFW firewall (without stopping it afterwards)
+# Enable UFW firewall (force yes)
 sudo ufw --force enable
+
+# Flush existing iptables rules (to avoid interference)
+sudo iptables -F
+sudo iptables -X
+sudo iptables -t nat -F
+sudo iptables -t nat -X
+sudo iptables -t mangle -F
+sudo iptables -t mangle -X
+
+# Show final UFW status
+sudo ufw status verbose
