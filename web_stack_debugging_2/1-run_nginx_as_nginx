@@ -1,4 +1,6 @@
 #!/bin/bash
+# confure nginx to run as 'nginx' user and listen on port 8080
+
 
 # Exit on error
 set -e
