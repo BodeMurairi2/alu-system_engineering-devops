@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install and configure HAproxy on lb-01
+# Install and configure HAProxy with web-01 and web-02 backend servers
 
 # Install HAProxy 1.8
 sudo apt-get update
@@ -8,11 +8,21 @@ sudo add-apt-repository -y ppa:vbernat/haproxy-1.8
 sudo apt-get update
 sudo apt-get -y install haproxy=1.8.*
 
-# Define HAProxy config snippet
-haproxy_cfg="\nfrontend http_front\n\tbind *:80\n\tdefault_backend http_back\nbackend http_back\n\tbalance roundrobin\n\tserver web-01 34.236.171.16:80 check\n\tserver web-02 3.236.14.41:80 check"
+# Backup original config
+sudo cp /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.bak
 
-# Insert config after a known comment or line (after errorfile 504)
-sudo sed -i "/^.*errorfile 504.*/a $haproxy_cfg" /etc/haproxy/haproxy.cfg
+# Append frontend and backend configuration to HAProxy config
+sudo tee -a /etc/haproxy/haproxy.cfg > /dev/null <<EOF
 
-# Restart HAProxy
+frontend http_front
+    bind *:80
+    default_backend http_back
+
+backend http_back
+    balance roundrobin
+    server web-01 34.236.171.16:80 check
+    server web-02 3.236.14.41:80 check
+EOF
+
+# Restart HAProxy to apply changes
 sudo service haproxy restart
