@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# Exit on error
+set -e
+
+# Ensure nginx is installed
+if ! command -v nginx &>/dev/null; then
+    echo "Nginx is not installed. Exiting..."
+    exit 1
+fi
+
+# Create nginx user if it doesn't exist
+if ! id -u nginx &>/dev/null; then
+    echo "Creating nginx user..."
+    useradd -r -s /sbin/nologin nginx
+fi
+
+# Update nginx config to:
+# 1. Run as 'nginx' user
+# 2. Listen on port 8080 on all interfaces
+
+NGINX_CONF="/etc/nginx/nginx.conf"
+
+# Backup original config
+cp "$NGINX_CONF" "$NGINX_CONF.bak"
+
+# Change user to 'nginx'
+sed -i 's/^user .*/user nginx;/' "$NGINX_CONF"
+
+# Change the default port to 8080
+# Works for Debian/Ubuntu style default config (adjust path if needed)
+DEFAULT_SITE_CONF="/etc/nginx/sites-enabled/default"
+if [ -f "$DEFAULT_SITE_CONF" ]; then
+    sed -i 's/listen 80 default_server;/listen 8080 default_server;/g' "$DEFAULT_SITE_CONF"
+    sed -i 's/listen \[::\]:80 default_server;/listen [::]:8080 default_server;/g' "$DEFAULT_SITE_CONF"
+fi
+
+# If no default site config, try main config (used in Alpine/CentOS sometimes)
+if ! grep -q "listen 8080" "$DEFAULT_SITE_CONF" 2>/dev/null; then
+    sed -i 's/listen\s\+80;/listen 8080;/g' "$NGINX_CONF"
+fi
+
+# Ensure nginx user owns the html directory
+chown -R nginx:nginx /var/www/html || true
+
+# Restart nginx
+echo "Restarting nginx..."
+nginx -t && systemctl restart nginx || nginx -s reload
+
+# Confirm
+echo "Nginx is now running as 'nginx' user on port 8080"
+
