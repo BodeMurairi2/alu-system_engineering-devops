@@ -1,18 +1,29 @@
 #!/usr/bin/env bash
 # Install and configure HAProxy with web-01 and web-02 backend servers
 
-# Install HAProxy 1.8
 sudo apt-get update
 sudo apt-get -y install software-properties-common
 sudo add-apt-repository -y ppa:vbernat/haproxy-1.8
 sudo apt-get update
 sudo apt-get -y install haproxy=1.8.*
 
-# Backup original config
-sudo cp /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.bak
+# Write a fresh haproxy.cfg with the required config
+sudo tee /etc/haproxy/haproxy.cfg > /dev/null <<EOF
+global
+    log /dev/log    local0
+    maxconn 4096
+    user haproxy
+    group haproxy
+    daemon
 
-# Append frontend and backend configuration to HAProxy config
-sudo tee -a /etc/haproxy/haproxy.cfg > /dev/null <<EOF
+defaults
+    mode http
+    log global
+    option httplog
+    option dontlognull
+    timeout connect 5000
+    timeout client 50000
+    timeout server 50000
 
 frontend http_front
     bind *:80
@@ -24,5 +35,5 @@ backend http_back
     server web-02 3.236.14.41:80 check
 EOF
 
-# Restart HAProxy to apply changes
+# Restart haproxy to apply the new config
 sudo service haproxy restart
