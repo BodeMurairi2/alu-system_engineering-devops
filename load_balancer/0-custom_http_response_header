@@ -1,34 +1,19 @@
 #!/usr/bin/env bash
-# Configure Nginx so that its HTTP response contains a custom header
+# shellcheck disable=SC2154
 
-set -e
-
-# Install Nginx
+# Update package list and install nginx
 apt-get update -y
 apt-get install -y nginx
 
-# Set the hostname in a variable
-HOSTNAME=$(hostname)
+# Get the hostname
+hostname=$(hostname)
 
-# Create index.html
-echo "Hello World!" > /usr/share/nginx/html/index.html
+# Add the custom header to the default nginx site config
+config_file="/etc/nginx/sites-available/default"
+if ! grep -q "X-Served-By" "$config_file"; then
+    # Add inside the server block
+    sed -i "/server_name _;/a \\\tadd_header X-Served-By \$hostname;" "$config_file"
+fi
 
-# Create custom 404 page
-mkdir -p /var/www/html
-echo "Ceci n'est pas une page" > /var/www/html/custom_404.html
-
-# Backup the original config
-cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bak
-
-# Insert the custom header into the location / block
-sed -i "/location \/ {/a \\\tadd_header X-Served-By $HOSTNAME;" /etc/nginx/sites-available/default
-
-# Add redirect and custom error page
-sed -i "/location \/ {/a \\\tlocation /redirect_me {\n\t\treturn 301 \$scheme://www.google.com;\n\t}" /etc/nginx/sites-available/default
-sed -i "/server_name _;/a \\\terror_page 404 /custom_404.html;" /etc/nginx/sites-available/default
-
-# Restart nginx
-nginx -t && systemctl restart nginx
-
-# Done
-echo "✅ Nginx configured with custom header X-Served-By: $HOSTNAME"
+# Restart Nginx using 'service'
+sudo service nginx restart
