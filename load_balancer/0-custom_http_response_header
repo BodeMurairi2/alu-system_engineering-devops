@@ -1,35 +1,10 @@
 #!/usr/bin/env bash
-# configure nginx and your loadbalaancer
-# Update and install nginx
-sudo apt-get update
-sudo apt-get -y install nginx
+# script that doubles the number of webservers and adds new configs
 
-# Allow HTTP traffic through firewall
-sudo ufw allow 'Nginx HTTP'
+# install nginx
+apt-get  update ; apt-get -y install nginx
 
-# Create default web directories and files
-sudo mkdir -p /var/www/html
-sudo chmod -R 755 /var/www
-
-echo 'Hello World!' | sudo tee /var/www/html/index.html
-echo "Ceci n'est pas une page" | sudo tee /var/www/html/404.html
-
-# Backup original nginx config
-sudo cp /etc/nginx/sites-enabled/default /etc/nginx/sites-enabled/default.bak
-
-# Insert 'add_header X-Served-By $hostname;' after 'server_name _;' line
-sudo sed -i '/server_name _;/a \    add_header X-Served-By "$hostname";' /etc/nginx/sites-enabled/default
-
-# Insert rewrite rule for /redirect_me after add_header
-sudo sed -i '/add_header X-Served-By "\$hostname";/a \    rewrite ^\/redirect_me https:\/\/www.blog.ehoneahobed.com permanent;' /etc/nginx/sites-enabled/default
-
-# Insert error page config after 'listen 80 default_server;' line
-sudo sed -i '/listen 80 default_server;/a \
-    error_page 404 /404.html;\
-    location = /404.html {\
-        root /var/www/html;\
-        internal;\
-    }' /etc/nginx/sites-enabled/default
-
-# Test nginx config and restart service
-sudo nginx -t && sudo service nginx restart
+string="http {\n\tadd_header X-Served-By \"$HOSTNAME\";"
+sudo sed -i "s/http {/$string/" /etc/nginx/nginx.conf
+# restart nginx
+sudo service nginx restart
