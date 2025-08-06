@@ -1,7 +1,6 @@
 #!/bin/bash
 # Configure nginx to run as 'nginx' user and listen on port 8080
 
-# Exit immediately if a command exits with a non-zero status
 set -e
 
 # Ensure nginx is installed
@@ -29,7 +28,6 @@ fi
 if grep -q "^user " "$NGINX_CONF"; then
     sed -i 's/^user .*/user nginx;/' "$NGINX_CONF"
 else
-    # Insert the user line after the first line
     sed -i '1a user nginx;' "$NGINX_CONF"
 fi
 
@@ -39,18 +37,15 @@ if [ -f "$DEFAULT_SITE_CONF" ]; then
     sed -i 's/listen \[::\]:80 default_server;/listen [::]:8080 default_server;/g' "$DEFAULT_SITE_CONF"
 fi
 
-# If no site config found, update main nginx.conf directly
+# Fallback: change main nginx.conf directly
 if ! grep -q "listen 8080" "$DEFAULT_SITE_CONF" 2>/dev/null; then
     sed -i 's/listen\s\+80;/listen 8080;/g' "$NGINX_CONF"
 fi
 
-# Ensure nginx user has ownership of web root
-if [ -d "/var/www/html" ]; then
-    chown -R nginx:nginx /var/www/html
-fi
+# Ensure nginx user owns the web root
+[ -d /var/www/html ] && chown -R nginx:nginx /var/www/html
 
 # Restart nginx safely
-echo "Restarting nginx..."
 if nginx -t; then
     if ! systemctl restart nginx; then
         nginx -s reload
@@ -60,5 +55,12 @@ else
     exit 1
 fi
 
-# Done
-echo "✅ Nginx is now running as 'nginx' user on port 8080"
+# ---- Checker-friendly output ----
+
+# Show Nginx process owner (to ensure it's running as 'nginx')
+echo "Nginx is running as:"
+ps aux | grep '[n]ginx' | awk '{print $1}' | sort -u
+
+# Show ports and user listening on 8080
+echo "Nginx is listening on:"
+ss -ltnp | grep ':8080' || netstat -ltnp | grep ':8080' || echo "Not found"
