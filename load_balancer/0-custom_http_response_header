@@ -1,19 +1,32 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2154
 
-# Update package list and install nginx
+# Update package list and install nginx if not installed
 apt-get update -y
 apt-get install -y nginx
 
 # Get the hostname
 hostname=$(hostname)
 
-# Add the custom header to the default nginx site config
+# Path to Nginx default site config
 config_file="/etc/nginx/sites-available/default"
-if ! grep -q "X-Served-By" "$config_file"; then
-    # Add inside the server block
-    sed -i "/server_name _;/a \\\tadd_header X-Served-By \$hostname;" "$config_file"
+
+# Backup original config if not backed up yet
+if [ ! -f "${config_file}.bak" ]; then
+    cp "$config_file" "${config_file}.bak"
 fi
 
-# Restart Nginx using 'service'
-sudo service nginx restart
+# Add the custom header if not already present
+if ! grep -q 'add_header X-Served-By' "$config_file"; then
+    # Insert add_header line inside the server block (after server_name directive)
+    sed -i '/server_name _;/a \    add_header X-Served-By "$hostname";' "$config_file"
+fi
+
+# Test nginx config syntax
+if nginx -t; then
+    # Reload nginx to apply changes
+    sudo service nginx restart
+else
+    echo "Nginx configuration test failed. Please check the config file."
+    exit 1
+fi
